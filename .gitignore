@@ -1,3 +1,5 @@
-#We ignore this file because contains sensible data
-credentials.json
+#Don't allowing pass this file to Github
 .env
+venv
+credentials.json
+__py__cache

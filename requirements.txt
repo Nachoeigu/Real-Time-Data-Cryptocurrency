@@ -1,5 +1,5 @@
-requests=2.25.1
-pandas=1.1.5
-python-dotenv=0.13.0
-gspread=4.6.1
-gspread-dataframe=3.2.1
+requests==2.25.1
+pandas==1.1.5
+python-dotenv==0.13.0
+gspread>=4.6.1
+gspread-dataframe==3.2.1
