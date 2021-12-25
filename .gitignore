@@ -2,4 +2,5 @@
 .env
 venv
 credentials.json
-__py__cache
+__pycache__
+.DS_Store
