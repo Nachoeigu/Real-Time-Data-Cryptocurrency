@@ -36,6 +36,7 @@ class Coins:
         #Making the request
         try:
             response = self.session.get(self.url, params=self.parameters)
+            print("Making the request to the Coinmarketcap page")
             self.data = json.loads(response.text)
 
         except (ConnectionError, Timeout, TooManyRedirects) as e:
@@ -50,6 +51,7 @@ class Coins:
         length = len(self.data["data"])
 
         #With this loop, we get the price and name of each coin
+        print("Extracting the price of each token")
         for n_coin in range(0,length):
             price = float(self.data["data"][n_coin]["quote"]["USD"]["price"])
 
@@ -71,11 +73,13 @@ class Coins:
             coin_name.append(name)
 
         #We create the dataframe with the ouput of the for loop
+        print("Creating the dataframe with the data")
         self.crypto_prices = pd.DataFrame(list(zip(coin_name, coin_price)), columns = ['coin_name', 'coin_price'])
         
 
     #This function stores the dataframe in Google Spreadsheet so then we can manage our portfolio easily
     def upload(self):
+        print("Updating everything in Google Spreadsheet")
         #Credentials for accessing to Google API
         id_keys = 'credentials.json'
         gc = gspread.service_account(filename = id_keys)
@@ -86,7 +90,7 @@ class Coins:
 
         # With this line, we send the data each time we execute the function
         set_with_dataframe(worksheet, self.crypto_prices)
-        
+        print("The End!")
 
 
         
