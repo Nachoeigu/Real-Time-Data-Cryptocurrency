@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import os
 import gspread
 from gspread_dataframe import set_with_dataframe
+import datetime
 
 class Coins:
 
@@ -76,6 +77,8 @@ class Coins:
         print("Creating the dataframe with the data")
         self.crypto_prices = pd.DataFrame(list(zip(coin_name, coin_price)), columns = ['coin_name', 'coin_price'])
         
+        #We add the information about the time we made the last update
+        self.crypto_prices['last_update'] = datetime.datetime.today().strftime("%d-%b-%Y (%H:%M)")
 
     #This function stores the dataframe in Google Spreadsheet so then we can manage our portfolio easily
     def upload(self):
