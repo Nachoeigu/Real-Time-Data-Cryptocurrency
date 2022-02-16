@@ -86,8 +86,8 @@ def request_coingreko():
     current_price = []
 
     #We request for the current price of the first 32 pages in Coingreko
-    for number in range(1,32):
-        time.sleep(3)
+    for number in range(1,30):
+        time.sleep(2)
         data = requests.get(f'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page={number}&sparkline=false', headers = headers)
         data = json.loads(data.content)
         for item in data:
