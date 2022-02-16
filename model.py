@@ -16,12 +16,12 @@ class Coins:
 
         if self.mode == False:
             #The output is a dataframe with two columns
-            self.data = request_coinmarketcap()
+            self.crypto_prices = request_coinmarketcap()
 
 
         if self.mode == True:
             #The output is a dataframe with two columns coin_name and price_name
-            self.data = request_coingreko()
+            self.crypto_prices = request_coingreko()
 
 
 
