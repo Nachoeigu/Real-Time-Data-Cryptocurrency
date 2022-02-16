@@ -2,12 +2,15 @@ from functions import request_coinmarketcap, request_coingreko
 import os
 import gspread
 from gspread_dataframe import set_with_dataframe
+from dotenv import load_dotenv
 
 class Coins:
 
     def __init__(self, mode = True):
         #Adding the mode defines if we extract data from Coinmarketcap(false) or Coingeko(true). 
         # Default = Coingeko
+        #Loading the secret variables 
+        load_dotenv()
 
         self.mode = mode
 
