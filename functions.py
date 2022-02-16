@@ -92,22 +92,30 @@ def request_coingreko():
         data = json.loads(data.content)
         for item in data:
             symbol = item['symbol'].lower()
-            current_prices = float(item['current_price'])
-
-            #For readibility, we round in case the price is higher than 50 USD
-            if current_prices > 50:
-                current_prices = round(current_prices, 0)
-
-            #For readibility, we keep the first two decimals in case the price is lower than 50 USD but higher than 10 USD
-            elif (current_prices <= 50) & (current_prices >= 10):
-                current_prices = round(current_prices, 2)
-
-            #For readibility, we keep all the decimals in case the price is lower than 10 USD
+            current_prices = item['current_price']
+            
+            #If we don´t know the price of that token, add to it 0
+            if current_prices == None:
+                current_price.append(0)
+                coin.append(symbol)
+            
             else:
-                current_prices = round(current_prices, 10)
+                current_prices = float(current_prices)
 
-            coin.append(symbol)
-            current_price.append(current_prices)
+                #For readibility, we round in case the price is higher than 50 USD
+                if current_prices > 50:
+                    current_prices = round(current_prices, 0)
+
+                #For readibility, we keep the first two decimals in case the price is lower than 50 USD but higher than 10 USD
+                elif (current_prices <= 50) & (current_prices >= 10):
+                    current_prices = round(current_prices, 2)
+
+                #For readibility, we keep all the decimals in case the price is lower than 10 USD
+                else:
+                    current_prices = round(current_prices, 10)
+
+                coin.append(symbol)
+                current_price.append(current_prices)
     
     #We create the dataframe with the ouput of the for loop
     print("Creating the dataframe with the data from Coingecko")
