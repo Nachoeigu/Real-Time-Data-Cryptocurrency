@@ -7,6 +7,8 @@ import pandas as pd
 from dotenv import load_dotenv
 import os
 import datetime
+import gspread
+from difflib import SequenceMatcher
 
 
 def request_coinmarketcap():
@@ -80,48 +82,112 @@ def request_coinmarketcap():
 
         return crypto_prices
 
+def needed_coins_from_spreadsheets():
+    #We need to retrieve the needed coins from Google Spreadsheets so we can find the current price of those specific coins
+
+    load_dotenv()
+
+    #We obtain a list with all the IDS
+    spreadsheets_ids = [os.getenv('SPREADSHEET_ID')]
+    
+    # Conection with Google API
+    gc = gspread.service_account(filename = 'credentials.json') 
+    
+    #We interact with each spreadsheet in order to know the unique coins
+    needed_coins_symbols = []
+    needed_coins_names = []
+    
+    print("Obtaining the needed coins from Google Spreadsheets")
+    for spreadsheet in spreadsheets_ids:
+        sh = gc.open_by_key(spreadsheet) 
+        worksheet = sh.get_worksheet(0)
+        #First we extract the symbols
+        values_list = worksheet.col_values(3)
+        coins = values_list[1:]
+
+        for each_coin in coins:
+            if each_coin in needed_coins_symbols:
+                continue
+            else:
+                needed_coins_symbols.append(each_coin.lower())
+
+        #We extract the name of those coins because there are cases with the same symbol (mng is one example of this)
+        values_list = worksheet.col_values(4)
+        coins = values_list[1:]
+
+        for each_coin in coins:
+            if each_coin in needed_coins_names:
+                continue
+            else:
+                needed_coins_names.append(each_coin.lower())
+
+    return needed_coins_symbols, needed_coins_names
+
+def string_matching(first_string, second_string):
+    if (SequenceMatcher(None, first_string, second_string).ratio()) > 0.6:
+        return True
+    else:
+        return False
+
 def request_coingreko():
     headers = {'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.87 Safari/537.36'}
+
+    #We obtain the coin names we should obtain its price from Google Spreadsheet
+    needed_coins_in_symbols, needed_coins_names = needed_coins_from_spreadsheets()
+
+    #We have the needed coins in symbol format, we need to have them in name format in order to obtain its price, so we create this variable with the symbols and names:
+    print("Trying to find the name of each symbol we extract from Google Spreadsheets")
+    data = requests.get('https://api.coingecko.com/api/v3/coins/list')
+    data = json.loads(data.content)
+
+    coin_names_from_coingeko = []
+    for index in range(0,len(needed_coins_in_symbols)):
+        for symbol in data:
+            target_symbol = symbol['symbol'].lower()
+            target_name = symbol['name'].lower().replace('-',' ')
+            
+            #We make a double validation: First by symbol, and second by name
+            if (target_symbol == needed_coins_in_symbols[index]) & (string_matching(target_name, needed_coins_names[index])):
+                coin_names_from_coingeko.append(symbol['name'].replace(' ','-').lower().strip())
+                break
+    
     coin = []
-    current_price = []
-
-    #We request for the current price of the first 32 pages in Coingreko
-    for number in range(1,30):
+    price = []
+    print("Obtaining the price of each coin")
+    #We request for the current price of the needed coins
+    for index in range(0,len(coin_names_from_coingeko)):
         time.sleep(2)
-        data = requests.get(f'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page={number}&sparkline=false', headers = headers)
+        data = requests.get(f"https://api.coingecko.com/api/v3/simple/price?ids={coin_names_from_coingeko[index]}&vs_currencies=usd", headers = headers)
         data = json.loads(data.content)
-        for item in data:
-            symbol = item['symbol'].lower()
-            current_prices = item['current_price']
-            
-            #If we don´t know the price of that token, add to it 0
-            if current_prices == None:
-                current_price.append(0)
-                coin.append(symbol)
-            
-            else:
-                current_prices = float(current_prices)
+        current_price = data[coin_names_from_coingeko[index]]['usd']
+        try:
+            current_price = float(current_price)
+            #I NEED TO FIND A WAY TO CONVERT NOTATION SCIENTIFIC NUMBER TO FLOAT
 
-                #For readibility, we round in case the price is higher than 50 USD
-                if current_prices > 50:
-                    current_prices = round(current_prices, 0)
+        except:
+            coin.append(needed_coins_in_symbols[index])
+            price.append('')
+            continue
 
-                #For readibility, we keep the first two decimals in case the price is lower than 50 USD but higher than 10 USD
-                elif (current_prices <= 50) & (current_prices >= 10):
-                    current_prices = round(current_prices, 2)
+        #For readibility, we round in case the price is higher than 50 USD
+        if current_price > 50:
+            current_price = round(current_price, 0)
 
-                #For readibility, we keep all the decimals in case the price is lower than 10 USD
-                else:
-                    current_prices = round(current_prices, 10)
+        #For readibility, we keep the first two decimals in case the price is lower than 50 USD but higher than 10 USD
+        elif (current_price <= 50) & (current_price >= 10):
+            current_price = round(current_price, 2)
 
-                coin.append(symbol)
-                current_price.append(current_prices)
+        #For readibility, we keep all the decimals in case the price is lower than 10 USD
+        else:
+            current_price = round(current_price, 10)
+        coin.append(needed_coins_in_symbols[index])
+        price.append(current_price)
     
     #We create the dataframe with the ouput of the for loop
     print("Creating the dataframe with the data from Coingecko")
     crypto_prices = pd.DataFrame({'coin_name':coin,
-                'coin_price':current_price})
-
+                'coin_price':price})
+    print(crypto_prices)
     #We add the information about the time we made the last update
     crypto_prices['last_update'] = datetime.datetime.today().strftime("%d-%b-%Y (%H:%M)")
 
