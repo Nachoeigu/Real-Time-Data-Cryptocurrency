@@ -26,8 +26,6 @@ class Coins:
             #The output is a dataframe with two columns coin_name and price_name
             self.crypto_prices = request_coingreko()
 
-
-
     #This function stores the dataframe in Google Spreadsheet so then we can manage our portfolio easily
     def upload(self):
         print("Updating everything in Google Spreadsheet")
@@ -35,13 +33,12 @@ class Coins:
         id_keys = 'credentials.json'
         gc = gspread.service_account(filename = id_keys)
 
-        # We access in the spreadsheet where we want to store the values        
-        sh = gc.open_by_key(f'{os.getenv("SPREADSHEET_ID")}')
-        worksheet = sh.get_worksheet(1) # 0 is the first sheet, 1 is the second sheet, etc.  
-
-        # With this line, we send the data each time we execute the function
-        set_with_dataframe(worksheet, self.crypto_prices)
+        # We access in the spreadsheet where we want to store the values 
+        for sheet in [os.getenv("SPREADSHEET_ID")]:
+            sh = gc.open_by_key(f'{sheet}')
+            worksheet = sh.get_worksheet(1) # 0 is the first sheet, 1 is the second sheet, etc.  
+            # With this line, we send the data each time we execute the function
+            set_with_dataframe(worksheet, self.crypto_prices)
         print("The End!")
 
 
-        
