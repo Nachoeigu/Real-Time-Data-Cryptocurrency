@@ -103,7 +103,7 @@ def needed_coins_from_spreadsheets():
         worksheet = sh.get_worksheet(0)
         #First we extract the symbols
         values_list = worksheet.col_values(3)
-        coins = values_list[1:]
+        coins = [item.lower() for item in values_list[1:]]
 
         for each_coin in coins:
             if each_coin in needed_coins_symbols:
